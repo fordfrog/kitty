@@ -23,6 +23,7 @@ In development.
 
 ## To Do
 
+* show number of supported files in each directory in the directory tree
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts
