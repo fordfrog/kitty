@@ -21,7 +21,7 @@ function openTopDirDialog() {
  * @param {Event} event event from the dialog
  */
 function onTopDirDialogClose(event) {
-    var files = event.target.files, dirTreeContent, li, span, file;
+    var files = event.target.files, dirTreeContent, li, file;
 
     if (files.length === 0) {
         return;
@@ -32,18 +32,12 @@ function onTopDirDialogClose(event) {
     dirTreeContent = _document.querySelector("#dir-tree-content");
     dirTreeContent.innerHTML = "";
 
-    li = _document.createElement("li");
-    span = _document.createElement("span");
-    li.appendChild(span);
-    span.appendChild(_document.createTextNode(file.name));
-    span.setAttribute("data-path", file.path);
-    span.title = file.path;
-    span.addEventListener("click", onSelectDirectory, false);
+    li = createDirectoryTreeElement(file.path);
     dirTreeContent.appendChild(li);
 
     readDirectoryContent(li, file.path);
 
-    loadDirectoryFiles(file.path, span);
+    loadDirectoryFiles(file.path, li.firstChild);
 }
 
 /**
@@ -67,7 +61,7 @@ function readDirectoryContent(parentElement, path) {
  * @param {Element} parentElement parent element where to append info
  */
 function loadDirectoryContent(err, files, path, parentElement) {
-    var i, file, filePath, dirs = [], dir, ul, li, span, filesCount = 0, stat;
+    var i, file, filePath, dirs = [], dir, ul, li, filesCount = 0, stat;
 
     if (err !== null) {
         return;
@@ -97,17 +91,32 @@ function loadDirectoryContent(err, files, path, parentElement) {
 
     for (i = 0; i < dirs.length; i++) {
         dir = dirs[i];
-        li = _document.createElement("li");
-        span = _document.createElement("span");
-        li.appendChild(span);
-        span.appendChild(_document.createTextNode(nodePath.basename(dir)));
-        span.setAttribute("data-path", dir);
-        span.title = dir;
-        span.addEventListener("click", onSelectDirectory, false);
+        li = createDirectoryTreeElement(dir);
         ul.appendChild(li);
 
         readDirectoryContent(li, dir);
     }
+}
+
+/**
+ * Creates directory tree element.
+ *
+ * @param {String} dirPath directory path
+ *
+ * @returns {Element} created element
+ */
+function createDirectoryTreeElement(dirPath) {
+    var li, span;
+
+    li = _document.createElement("li");
+    span = _document.createElement("span");
+    li.appendChild(span);
+    span.appendChild(_document.createTextNode(nodePath.basename(dirPath)));
+    span.setAttribute("data-path", dirPath);
+    span.title = dirPath;
+    span.addEventListener("click", onSelectDirectory, false);
+
+    return li;
 }
 
 /**
