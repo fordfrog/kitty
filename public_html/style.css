@@ -45,7 +45,7 @@
 
 #content {
     flex: 1;
-    overflow-x: none;
+    overflow-x: hidden;
     overflow-y: auto;
 }
 
