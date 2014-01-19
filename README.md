@@ -4,6 +4,19 @@ Kitty is file metadata viewer and editor. It works over selected directory and
 its subdirectories. Only supported files are displayed, unsupported files are
 filtered out.
 
+## Supported Platforms
+
+Kitty is implemented using
+[node-webkit](https://github.com/rogerwang/node-webkit) so it should run on all
+platforms where node-webkit runs, which are at this moment Linux, Windows and
+Mac.
+
+## Required External Tools
+
+* [node-webkit](https://github.com/rogerwang/node-webkit) (mandatory)
+* [ExifTool](http://www.sno.phy.queensu.ca/~phil/exiftool/) by Phil Harvey
+  (mandatory - used for metadata reading/writing)
+
 ## Status
 
 In development.
@@ -25,3 +38,17 @@ In development.
 * enable editing/addition/removal of meta tags and their values
 * enable easy rating of images (rating and image rejection) usable for
   photography
+
+## Running the application
+
+The application is implemented using [node-webkit](https://github.com/rogerwang/node-webkit)
+so it needs to be installed on your system. You can download it
+[here](https://github.com/rogerwang/node-webkit/blob/master/README.md#downloads).
+To run the application, run:
+
+
+````bash
+$ ./nw dir
+````
+
+where dir is directory where index.html of the application is located.
