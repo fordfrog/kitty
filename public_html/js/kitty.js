@@ -12,7 +12,7 @@ function openTopDirDialog() {
 }
 
 function setTopDir(event) {
-    var files = event.target.files, dirTreeContent, li, file;
+    var files = event.target.files, dirTreeContent, li, span, file;
 
     if (files.length === 0) {
         return;
@@ -24,9 +24,11 @@ function setTopDir(event) {
     dirTreeContent.innerHTML = "";
 
     li = _document.createElement("li");
-    li.appendChild(_document.createTextNode(file.name));
-    li.setAttribute("data-path", file.path);
-    li.title = file.path;
+    span = _document.createElement("span");
+    li.appendChild(span);
+    span.appendChild(_document.createTextNode(file.name));
+    span.setAttribute("data-path", file.path);
+    span.title = file.path;
     dirTreeContent.appendChild(li);
 
     readSubDirs(li, file.path);
@@ -39,7 +41,7 @@ function readSubDirs(parentElement, path) {
 }
 
 function loadSubDirs(err, files, path, parentElement) {
-    var i, file, filePath, dirs = [], dir, ul, li;
+    var i, file, filePath, dirs = [], dir, ul, li, span;
 
     if (err !== null) {
         return;
@@ -64,9 +66,11 @@ function loadSubDirs(err, files, path, parentElement) {
     for (i = 0; i < dirs.length; i++) {
         dir = dirs[i];
         li = _document.createElement("li");
-        li.appendChild(_document.createTextNode(nodePath.basename(dir)));
-        li.setAttribute("data-path", dir);
-        li.title = dir;
+        span = _document.createElement("span");
+        li.appendChild(span);
+        span.appendChild(_document.createTextNode(nodePath.basename(dir)));
+        span.setAttribute("data-path", dir);
+        span.title = dir;
         ul.appendChild(li);
 
         readSubDirs(li, dir);
