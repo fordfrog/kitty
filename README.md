@@ -32,11 +32,13 @@ In development.
 * display preview on the files, if tool for generation of the preview is
   available in the system
 * when file is clicked, load and display file metadata
-* on file double-click display enlarged image preview
-* when in enlarged image preview, enable moving forward/backward using buttons
-  and keyboard
+* on preview double-click display enlarged preview
+* when in enlarged preview, enable moving forward/backward using buttons and
+  keyboard
 * enable filtering by meta tag values and strings
-* enable editing/addition/removal of meta tags and their values
+* enable editing/addition/removal of meta tags and their values on single files
+* enable editing/addition/removal of meta tags and their values on multiple
+  files at once
 * enable easy rating of images (rating and image rejection) usable for
   photography
 * add translations
