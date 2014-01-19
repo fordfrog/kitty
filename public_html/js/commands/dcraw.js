@@ -28,6 +28,20 @@ function updateAvailability(error, stdout, stderr) {
 }
 
 /**
+ * Checks whether specified file is supported by dcraw.
+ *
+ * @param {String} filePath file path
+ * @param {Function} callback callback function
+ */
+function isFileSupported(filePath, callback) {
+    if (!isAvailable) {
+        return;
+    }
+
+    nodeChildProcess.exec("dcraw -i \"" + filePath + "\"", callback);
+}
+
+/**
  * Resizes the image to the specified size.
  *
  * @param {String} sourceFile source file path
@@ -77,17 +91,25 @@ exports.createPreview = function(sourceFile, targetFile, maxWidth, maxHeight,
         return;
     }
 
-    tmpFile = targetFile + ".ppm";
+    isFileSupported(sourceFile, function(error, stdout, stderr) {
+        if (error) {
+            callback(error, stdout, stderr);
 
-    nodeChildProcess.exec("dcraw -c -w -h -q 0 \"" + sourceFile + "\" > \""
-            + tmpFile + "\"", function(error, stdout, stderr) {
-                if (error) {
-                    callback(error, stdout, stderr);
-                }
+            return;
+        }
 
-                resizeImage(tmpFile, targetFile, maxWidth, maxHeight,
-                        function(error, stdout, stderr) {
-                            callback(error, stdout, stderr);
-                        });
-            });
+        tmpFile = targetFile + ".ppm";
+
+        nodeChildProcess.exec("dcraw -c -w -h -q 0 \"" + sourceFile + "\" > \""
+                + tmpFile + "\"", function(error, stdout, stderr) {
+                    if (error) {
+                        callback(error, stdout, stderr);
+                    }
+
+                    resizeImage(tmpFile, targetFile, maxWidth, maxHeight,
+                            function(error, stdout, stderr) {
+                                callback(error, stdout, stderr);
+                            });
+                });
+    });
 };
