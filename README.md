@@ -1,8 +1,9 @@
 # Kitty
 
-Kitty is file metadata viewer and editor. It works over selected directory and
-its subdirectories. Only supported files are displayed, unsupported files are
-filtered out.
+Kitty is file metadata viewer, editor and organizer. It works over selected
+directory and its subdirectories. It does not use any database for storing of
+metadata, metadata are stored directly in the files or their associated files.
+Only supported files are displayed, unsupported files are filtered out.
 
 ## Supported Platforms
 
