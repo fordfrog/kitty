@@ -179,6 +179,7 @@ function showDirectoryFiles(err, dirPath, files) {
     content = _document.querySelector("#content");
     content.innerHTML = "";
 
+    preview.clearQueue();
     clearImageCache();
 
     for (i = 0; i < files.length; i++) {

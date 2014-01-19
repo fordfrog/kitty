@@ -125,3 +125,10 @@ exports.createPreview = function(filePath, element, tmpDir, maxWidth,
 
     processQueue();
 };
+
+/**
+ * Removes all items from the queue.
+ */
+exports.clearQueue = function() {
+    queue = [];
+};
