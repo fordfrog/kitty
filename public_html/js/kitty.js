@@ -6,12 +6,20 @@ var nodeFs = require("fs"), nodePath = require("path"),
         exiftool = require("./commands/exiftool.js"), supportedExtensions = [],
         extensionHandlers = {}, _document;
 
+/**
+ * Opens file dialog for selection of top directory.
+ */
 function openTopDirDialog() {
     var dialog = _document.querySelector("#btnOpenTopDirHelper");
     dialog.addEventListener("change", setTopDir, false);
     dialog.click();
 }
 
+/**
+ * Sets top directory as selected in the directory selection dialog.
+ *
+ * @param {Event} event event from the dialog
+ */
 function setTopDir(event) {
     var files = event.target.files, dirTreeContent, li, span, file;
 
@@ -98,6 +106,11 @@ function loadDirectoryContent(err, files, path, parentElement) {
     }
 }
 
+/**
+ * Initializes the application.
+ *
+ * @param {Document} document application document
+ */
 exports.init = function(document) {
     _document = document;
 
