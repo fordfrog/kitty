@@ -17,6 +17,12 @@ Mac.
 * [node-webkit](https://github.com/rogerwang/node-webkit) (mandatory)
 * [ExifTool](http://www.sno.phy.queensu.ca/~phil/exiftool/) by Phil Harvey
   (mandatory - used for metadata reading/writing)
+* [ImageMagick](http://www.imagemagick.org/) (optional - used for generating of
+  previews of various files)
+* [UFRaw](http://ufraw.sourceforge.net/) (optional - used for generating of
+  previews of image RAW files)
+* [dcraw](http://www.cybercom.net/~dcoffin/dcraw/) (optional - used for
+  generating of preview of image RAW files)
 
 ## Status
 
@@ -27,8 +33,6 @@ In development.
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts
-* display preview on the files, if tool for generation of the preview is
-  available in the system
 * when file is clicked, load and display file metadata
 * on preview double-click display enlarged preview
 * when in enlarged preview, enable moving forward/backward using buttons and

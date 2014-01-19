@@ -2,9 +2,21 @@
  * Copyright 2014 Miroslav Šulc
  */
 
-var nodeFs = require("fs"), nodePath = require("path"),
-        exiftool = require("./commands/exiftool.js"), supportedExtensions = [],
-        extensionHandlers = {}, _document, selectedDirectoryElement;
+var nodeFs = require("fs"), nodePath = require("path"), nodeOS = require("os"),
+        exiftool = require("./commands/exiftool.js"),
+        preview = require("./preview.js"), supportedExtensions = [],
+        extensionHandlers = {}, _document, selectedDirectoryElement,
+        appTmpDir = nodePath.resolve(nodeOS.tmpdir(), "kitty"),
+        imgTmpDir = nodePath.resolve(appTmpDir, "images"),
+        previewMaxWidth = 300, previewMaxHeight = 300;
+
+if (!nodeFs.existsSync(appTmpDir)) {
+    nodeFs.mkdirSync(appTmpDir);
+}
+
+if (!nodeFs.existsSync(imgTmpDir)) {
+    nodeFs.mkdirSync(imgTmpDir);
+}
 
 /**
  * Opens file dialog for selection of top directory.
@@ -145,17 +157,20 @@ function loadDirectoryFiles(path, directoryElement) {
     selectedDirectoryElement = directoryElement;
     directoryElement.className = "selected";
 
-    nodeFs.readdir(path, showDirectoryFiles);
+    nodeFs.readdir(path, function(err, files) {
+        showDirectoryFiles(err, path, files);
+    });
 }
 
 /**
  * Shows directory files in the content part of the window.
  *
  * @param {Error} err command error
+ * @param {String} dirPath directory path
  * @param {Array} files array of file names
  */
-function showDirectoryFiles(err, files) {
-    var content, i, file, element, preview;
+function showDirectoryFiles(err, dirPath, files) {
+    var content, i, file, element, previewElement, span;
 
     if (err !== null) {
         return;
@@ -164,6 +179,8 @@ function showDirectoryFiles(err, files) {
     content = _document.querySelector("#content");
     content.innerHTML = "";
 
+    clearImageCache();
+
     for (i = 0; i < files.length; i++) {
         file = files[i];
 
@@ -171,16 +188,43 @@ function showDirectoryFiles(err, files) {
             continue;
         }
 
-        preview = _document.createElement("div");
-        preview.className = "preview";
-        preview.appendChild(_document.createTextNode("No preview"));
+        previewElement = _document.createElement("div");
+        previewElement.className = "preview";
+        span = _document.createElement("span");
+        span.appendChild(_document.createTextNode("Loading preview..."));
+        previewElement.appendChild(span);
 
         element = _document.createElement("div");
         element.className = "file-info";
-        element.appendChild(preview);
+        element.appendChild(previewElement);
         element.appendChild(_document.createTextNode(files[i] + " "));
         content.appendChild(element);
+
+        createPreview(nodePath.resolve(dirPath, file), previewElement);
     }
+}
+
+/**
+ * Deletes all images in the image cache. The function returns after all images
+ * are deleted.
+ */
+function clearImageCache() {
+    var files = nodeFs.readdirSync(imgTmpDir), i;
+
+    for (i = 0; i < files.length; i++) {
+        nodeFs.unlinkSync(nodePath.resolve(imgTmpDir, files[i]));
+    }
+}
+
+/**
+ * Attempts to create preview for the specified file.
+ *
+ * @param {String} filePath file path
+ * @param {Element} previewElement element where to put the generated preview
+ */
+function createPreview(filePath, previewElement) {
+    preview.createPreview(filePath, previewElement, imgTmpDir, previewMaxWidth,
+            previewMaxHeight);
 }
 
 /**
