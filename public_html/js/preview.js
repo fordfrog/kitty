@@ -2,9 +2,11 @@
  * Copyright 2014 Miroslav Šulc
  */
 
-var nodePath = require("path"), dcraw = require("./commands/dcraw.js"),
+var nodePath = require("path"), nodeOS = require("os"),
+        dcraw = require("./commands/dcraw.js"),
         ufraw = require("./commands/ufraw.js"),
-        imagemagick = require("./commands/imagemagick.js");
+        imagemagick = require("./commands/imagemagick.js"),
+        numberOfCpus = nodeOS.cpus().length, queue = [], runningThreads = 0;
 
 /**
  * Attemts to create preview using one of the specified handlers.
@@ -23,6 +25,8 @@ function createPreview(handlers, sourceFile, targetFile, maxWidth, maxHeight,
         element.firstChild.appendChild(element.ownerDocument.createTextNode(
                 "No preview"));
 
+        processFinished();
+
         return;
     }
 
@@ -35,6 +39,8 @@ function createPreview(handlers, sourceFile, targetFile, maxWidth, maxHeight,
                             maxHeight, element);
                 } else {
                     showPreview(targetFile, element);
+
+                    processFinished();
                 }
             });
 }
@@ -56,6 +62,47 @@ function showPreview(filePath, element) {
 }
 
 /**
+ * Checks queue and the number of running processes and if there are less
+ * processes running than there is cpus, new processes are spawn.
+ */
+function processQueue() {
+    var item, targetFile, handlers = [];
+
+    while (queue.length > 0 && runningThreads < numberOfCpus) {
+        runningThreads++;
+
+        item = queue.splice(0, 1)[0];
+
+        targetFile = nodePath.resolve(item.tmpDir,
+                nodePath.basename(item.filePath) + ".jpg"), handlers = [];
+
+        if (ufraw.isAvailable()) {
+            handlers.push(ufraw);
+        }
+
+        if (dcraw.isAvailable()) {
+            handlers.push(dcraw);
+        }
+
+        if (imagemagick.isAvailable()) {
+            handlers.push(imagemagick);
+        }
+
+        createPreview(handlers, item.filePath, targetFile, item.maxWidth,
+                item.maxHeight, item.element);
+    }
+}
+
+/**
+ * Decreases number of running processes and attempts to spawn new process(es).
+ */
+function processFinished() {
+    runningThreads--;
+
+    processQueue();
+}
+
+/**
  * Attempts to create preview using one of the available handlers.
  *
  * @param {String} filePath path to the file for which the preview should be
@@ -68,20 +115,13 @@ function showPreview(filePath, element) {
  */
 exports.createPreview = function(filePath, element, tmpDir, maxWidth,
         maxHeight) {
-    var targetFile = nodePath.resolve(tmpDir, nodePath.basename(filePath)
-            + ".jpg"), handlers = [];
+    queue.push({
+        filePath: filePath,
+        element: element,
+        tmpDir: tmpDir,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight
+    });
 
-    if (ufraw.isAvailable()) {
-        handlers.push(ufraw);
-    }
-
-    if (dcraw.isAvailable()) {
-        handlers.push(dcraw);
-    }
-
-    if (imagemagick.isAvailable()) {
-        handlers.push(imagemagick);
-    }
-
-    createPreview(handlers, filePath, targetFile, maxWidth, maxHeight, element);
+    processQueue();
 };
