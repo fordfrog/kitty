@@ -39,6 +39,7 @@ In development.
 * enable editing/addition/removal of meta tags and their values
 * enable easy rating of images (rating and image rejection) usable for
   photography
+* add translations
 
 ## Running the application
 
