@@ -31,7 +31,7 @@
     padding: 2px 10px;
 }
 
-#dir-tree-content li span:hover {
+#dir-tree-content li span:hover, #dir-tree-content li span.selected {
     background-color: #333333;
 }
 
@@ -45,6 +45,31 @@
 
 #content {
     flex: 1;
+    overflow-x: none;
+    overflow-y: auto;
+}
+
+#content .file-info {
+    border: solid 1px #222222;
+    display: inline-block;
+    margin: 5px;
+    padding: 10px;
+    text-align: center;
+}
+
+#content .file-info:hover {
+    background-color: #222222;
+    cursor: pointer;
+}
+
+#content .file-info .preview {
+    color: #666666;
+    line-height: 100px;
+    margin: 0 0 10px 0;
+    min-height: 100px;
+    min-width: 60px;
+    text-align: center;
+    vertical-align: middle;
 }
 
 #detail {

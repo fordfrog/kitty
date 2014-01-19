@@ -27,8 +27,6 @@ In development.
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts
-* on click on directory in directory tree, display list of files in that
-  directory (just file name in the first iteration)
 * display preview on the files, if tool for generation of the preview is
   available in the system
 * when file is clicked, load and display file metadata
