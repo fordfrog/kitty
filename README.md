@@ -30,6 +30,8 @@ In development.
 
 ## To Do
 
+* implement session cache for previews (checking by file date and size, sorting
+  using full directory path hashes)
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts
@@ -37,7 +39,8 @@ In development.
 * on preview double-click display enlarged preview
 * when in enlarged preview, enable moving forward/backward using buttons and
   keyboard
-* enable filtering by meta tag values and strings
+* enable filtering by meta tag values, strings and media types
+  (audio/video/image/...)
 * enable editing/addition/removal of meta tags and their values on single files
 * enable editing/addition/removal of meta tags and their values on multiple
   files at once
