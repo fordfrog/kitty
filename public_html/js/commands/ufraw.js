@@ -3,8 +3,8 @@
  */
 
 
-var nodeChildProcess = require("child_process"), nodePath = require("path"),
-        isAvailable, isInitialized = false;
+var nodeChildProcess = require("child_process"), nodeFs = require("fs"),
+        nodePath = require("path"), isAvailable, isInitialized = false;
 
 nodeChildProcess.exec("ufraw-batch --version", updateAvailability);
 
@@ -56,11 +56,20 @@ exports.isInitialized = function() {
  */
 exports.createPreview = function(sourceFile, targetFile, maxWidth, maxHeight,
         callback) {
+    var useSourceFile;
+
     if (!isAvailable) {
         return;
     }
 
+    if (nodeFs.exists(sourceFile + ".ufraw")) {
+        useSourceFile = sourceFile + ".ufraw";
+    } else {
+        useSourceFile = sourceFile;
+    }
+
     nodeChildProcess.exec("ufraw-batch --size=" + maxWidth + "x" + maxHeight
             + " --out-type=jpeg --noexif --compression=75 --output=\""
-            + targetFile + "\" --overwrite \"" + sourceFile + "\"", callback);
+            + targetFile + "\" --overwrite \"" + useSourceFile + "\"",
+            callback);
 };
