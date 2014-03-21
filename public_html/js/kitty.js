@@ -291,7 +291,8 @@ function onSelectDirectory(event) {
  * @param {Object} dirObject directory object
  */
 function loadDirectoryFiles(dirObject) {
-    var content, i, file, element, previewElement, span, detailElement;
+    var content, i, file, element, previewElement, span, detailElement,
+            ratingElement, rating, j;
 
     if (selectedDirectoryElement) {
         selectedDirectoryElement.classList.remove("selected");
@@ -322,7 +323,26 @@ function loadDirectoryFiles(dirObject) {
         element.className = "file-info";
         element.setAttribute("data-path", file.path);
         element.appendChild(previewElement);
-        element.appendChild(_document.createTextNode(file.name + " "));
+        element.appendChild(_document.createTextNode(file.name));
+        element.appendChild(_document.createElement("br"));
+        element.appendChild(_document.createTextNode("Rating: "));
+
+        rating = file.XMP && typeof file.XMP.Rating === "number"
+                ? file.XMP.Rating : null;
+
+        for (j = 0; j <= 5; j++) {
+            ratingElement = _document.createElement("span");
+            ratingElement.appendChild(
+                    _document.createTextNode(j === 0 ? "✖" : "★"));
+            ratingElement.className = j === 0 ? "rating-zero" : "rating-star";
+
+            if (j === 0 && rating === 0 || j > 0 && rating >= j) {
+                ratingElement.classList.add("selected");
+            }
+
+            element.appendChild(ratingElement);
+        }
+
         content.appendChild(element);
 
         element.addEventListener("click", onSelectFile, false);

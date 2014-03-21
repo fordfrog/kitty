@@ -171,3 +171,20 @@ body, button {
     border-radius: 10px;
     -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
 }
+
+.rating-zero, .rating-star {
+    display: inline-block;
+    margin: 0 2px 0 0;
+}
+
+.rating-star {
+    font-size: 130%;
+}
+
+.rating-zero.selected, .rating-zero:hover {
+    color: #ff0000;
+}
+
+.rating-star.selected, .rating-star:hover {
+    color: #ffff00;
+}
