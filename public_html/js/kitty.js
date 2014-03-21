@@ -267,7 +267,7 @@ function loadDirectoryFiles(dirObject) {
         selectedDirectoryElement.className = "";
     }
 
-    selectedDirectoryElement = dirObject.element;
+    selectedDirectoryElement = dirObject.element.firstChild;
     selectedDirectoryElement.className = "selected";
 
     content = _document.querySelector("#content");
