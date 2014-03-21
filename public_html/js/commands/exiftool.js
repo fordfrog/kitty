@@ -84,3 +84,14 @@ exports.isFileRecognized = function(file) {
 
     return recognizedExtensions.indexOf(ext) !== -1;
 };
+
+/**
+ * Reads supported files from specified directory.
+ *
+ * @param {String} dir directory path
+ * @param {Function} handler handler to be called after the directory is read
+ */
+exports.readDir = function(dir, handler) {
+    nodeChildProcess.exec("exiftool -json -a -g0 .",
+            {cwd: dir, maxBuffer: 1024 * 1024 * 100}, handler);
+};

@@ -8,7 +8,7 @@ var nodeFs = require("fs"), nodePath = require("path"), nodeOS = require("os"),
         extensionHandlers = {}, _document, selectedDirectoryElement,
         appTmpDir = nodePath.resolve(nodeOS.tmpdir(), "kitty"),
         imgTmpDir = nodePath.resolve(appTmpDir, "images"),
-        previewMaxWidth = 300, previewMaxHeight = 300;
+        previewMaxWidth = 300, previewMaxHeight = 300, rootPath, tree;
 
 if (!nodeFs.existsSync(appTmpDir)) {
     nodeFs.mkdirSync(appTmpDir);
@@ -33,99 +33,203 @@ function openTopDirDialog() {
  * @param {Event} event event from the dialog
  */
 function onTopDirDialogClose(event) {
-    var files = event.target.files, dirTreeContent, li, file;
+    var files = event.target.files, dirTreeContent;
 
     if (files.length === 0) {
         return;
     }
 
-    file = files[0];
+    rootPath = files[0].path;
+    readDirectoryTree();
 
     dirTreeContent = _document.querySelector("#dir-tree-content");
     dirTreeContent.innerHTML = "";
 
-    li = createDirectoryTreeElement(file.path);
-    dirTreeContent.appendChild(li);
+    displayDirectoryTree(dirTreeContent, tree);
+    readFiles(tree, function() {
+        loadDirectoryFiles(tree);
+    });
 
-    readDirectoryContent(li, file.path);
-
-    loadDirectoryFiles(file.path, li.firstChild);
+    readFilesRecursively(tree);
 }
 
 /**
- * Reads directory content and fires loading of related info.
- *
- * @param {Element} parentElement parent element where to append the info
- * @param {String} path directory path
+ * Reads whole directory tree from the root path.
  */
-function readDirectoryContent(parentElement, path) {
-    nodeFs.readdir(path, function(err, files) {
-        loadDirectoryContent(err, files, path, parentElement);
+function readDirectoryTree() {
+    tree = {
+        path: rootPath,
+        pathWithoutRoot: "",
+        name: nodePath.basename(rootPath),
+        dirs: []
+    };
+
+    readSubDirectories(tree);
+}
+
+/**
+ * Reads parent subdirectories recursively and adds them to the parent.
+ *
+ * @param {Object} parent parent directory object
+ */
+function readSubDirectories(parent) {
+    var files, i, file, stats, fullPath, subDirectory;
+
+    files = nodeFs.readdirSync(parent.path);
+
+    for (i = 0; i < files.length; i++) {
+        file = files[i];
+        fullPath = nodePath.resolve(parent.path, file);
+        stats = nodeFs.statSync(fullPath);
+
+        if (stats.isDirectory()) {
+            subDirectory = {
+                path: fullPath,
+                pathWithoutRoot: nodePath.relative(rootPath, fullPath),
+                name: file,
+                dirs: []
+            };
+            parent.dirs.push(subDirectory);
+
+            readSubDirectories(subDirectory);
+        }
+    }
+}
+
+/**
+ * Reads files recursively into each sub-directory object.
+ *
+ * @param {Object} dirObject directory object
+ */
+function readFilesRecursively(dirObject) {
+    var i, subDir;
+
+    for (i = 0; i < dirObject.dirs.length; i++) {
+        subDir = dirObject.dirs[i];
+        readFiles(subDir);
+        readFilesRecursively(subDir);
+    }
+}
+
+/**
+ * Reads files for the specified directory object.
+ *
+ * @param {Object} dirObject directory object
+ * @param {Function} handler handler to be called after files are read
+ */
+function readFiles(dirObject, handler) {
+    exiftool.readDir(dirObject.path, function(error, stdout, stderr) {
+        readFilesHandler(dirObject, error, stdout, stderr, handler);
     });
 }
 
 /**
- * Loads directory content into the directory tree.
+ * Handler for reading files.
  *
- * @param {Error} err command error
- * @param {Array} files list of files in the parent directory
- * @param {String} path path of the parent directory
- * @param {Element} parentElement parent element where to append info
+ * @param {Object} dirObject directory object
+ * @param {String} error error message
+ * @param {String} stdout standard output
+ * @param {String} stderr error output
+ * @param {Function} handler handler to be called after files are read
  */
-function loadDirectoryContent(err, files, path, parentElement) {
-    var i, file, filePath, dirs = [], dir, ul, li, filesCount = 0, stat;
+function readFilesHandler(dirObject, error, stdout, stderr, handler) {
+    var data, i, item, textElement;
 
-    if (err !== null) {
-        return;
+    if (stdout) {
+        data = JSON.parse(stdout);
+    } else {
+        data = [];
     }
 
-    for (i = 0; i < files.length; i++) {
-        file = files[i];
-        filePath = nodePath.resolve(path, file);
-        stat = nodeFs.statSync(filePath);
+    dirObject.files = [];
 
-        if (stat.isDirectory()) {
-            dirs.push(filePath);
-        } else if (stat.isFile() && exiftool.isFileRecognized(file)) {
-            filesCount++;
+    for (i = 0; i < data.length; i++) {
+        item = data[i];
+        item.name = nodePath.basename(item.SourceFile);
+        item.path = nodePath.resolve(dirObject.path, item.SourceFile);
+
+        dirObject.files.push(item);
+    }
+
+    textElement = dirObject.element.firstChild;
+    textElement.appendChild(_document.createTextNode(
+            " (" + dirObject.files.length + ")"));
+
+    dirObject.files.sort(function(file1, file2) {
+        return file1.name.localeCompare(file2.name);
+    });
+
+    if (handler) {
+        handler(dirObject);
+    }
+}
+
+/**
+ * Searches for directory in the array of directory objects.
+ *
+ * @param {Array} dirsArray array of directory objects
+ * @param {String} dirName name of directory to search for
+ *
+ * @returns {Object} directory object or null
+ */
+function findDir(dirsArray, dirName) {
+    var i;
+
+    for (i = 0; i < dirsArray.length; i++) {
+        if (dirsArray[i].name === dirName) {
+            return dirsArray[i];
         }
     }
 
-    parentElement.firstChild.appendChild(_document.createTextNode(" ("
-            + filesCount + ")"));
+    return null;
+}
 
-    if (dirs.length === 0) {
-        return;
-    }
+/**
+ * Displays directory tree in the UI.
+ *
+ * @param {Element} parent parent element
+ * @param {Object} dirObject top directory object
+ */
+function displayDirectoryTree(parent, dirObject) {
+    var li, i, ul;
 
-    ul = _document.createElement("ul");
-    parentElement.appendChild(ul);
+    li = createDirectoryTreeElement(dirObject);
+    parent.appendChild(li);
+    dirObject.element = li;
 
-    for (i = 0; i < dirs.length; i++) {
-        dir = dirs[i];
-        li = createDirectoryTreeElement(dir);
-        ul.appendChild(li);
+    if (dirObject.dirs.length > 0) {
+        ul = _document.createElement("ul");
+        li.appendChild(ul);
 
-        readDirectoryContent(li, dir);
+        for (i = 0; i < dirObject.dirs.length; i++) {
+            displayDirectoryTree(ul, dirObject.dirs[i]);
+        }
     }
 }
 
 /**
  * Creates directory tree element.
  *
- * @param {String} dirPath directory path
+ * @param {Object} dirObject directory object
  *
  * @returns {Element} created element
  */
-function createDirectoryTreeElement(dirPath) {
-    var li, span;
+function createDirectoryTreeElement(dirObject) {
+    var li, span, text;
+
+    text = dirObject.name;
+
+    if (dirObject.files) {
+        text += " (" + dirObject.files.length + ")";
+    }
 
     li = _document.createElement("li");
     span = _document.createElement("span");
     li.appendChild(span);
-    span.appendChild(_document.createTextNode(nodePath.basename(dirPath)));
-    span.setAttribute("data-path", dirPath);
-    span.title = dirPath;
+    span.appendChild(_document.createTextNode(text));
+    span.setAttribute("data-path", dirObject.path);
+    span.setAttribute("data-path-without-root", dirObject.pathWithoutRoot);
+    span.title = dirObject.path;
     span.addEventListener("click", onSelectDirectory, false);
 
     return li;
@@ -138,43 +242,33 @@ function createDirectoryTreeElement(dirPath) {
  */
 function onSelectDirectory(event) {
     var directoryElement = event.target,
-            path = directoryElement.getAttribute("data-path");
+            pathWithoutRoot = directoryElement.getAttribute(
+                    "data-path-without-root"), i, pathParts, curPath;
 
-    loadDirectoryFiles(path, directoryElement);
+    pathParts = pathWithoutRoot.split(nodePath.sep);
+    curPath = tree;
+
+    for (i = 0; i < pathParts.length; i++) {
+        curPath = findDir(curPath.dirs, pathParts[i]);
+    }
+
+    loadDirectoryFiles(curPath);
 }
 
 /**
  * Loads the files in the specified directory.
  *
- * @param {String} path directory path
- * @param {Element} directoryElement directory element from the directory tree
+ * @param {Object} dirObject directory object
  */
-function loadDirectoryFiles(path, directoryElement) {
+function loadDirectoryFiles(dirObject) {
+    var content, i, file, element, previewElement, span;
+
     if (selectedDirectoryElement) {
         selectedDirectoryElement.className = "";
     }
 
-    selectedDirectoryElement = directoryElement;
-    directoryElement.className = "selected";
-
-    nodeFs.readdir(path, function(err, files) {
-        showDirectoryFiles(err, path, files);
-    });
-}
-
-/**
- * Shows directory files in the content part of the window.
- *
- * @param {Error} err command error
- * @param {String} dirPath directory path
- * @param {Array} files array of file names
- */
-function showDirectoryFiles(err, dirPath, files) {
-    var content, i, file, element, previewElement, span;
-
-    if (err !== null) {
-        return;
-    }
+    selectedDirectoryElement = dirObject.element;
+    selectedDirectoryElement.className = "selected";
 
     content = _document.querySelector("#content");
     content.innerHTML = "";
@@ -182,12 +276,8 @@ function showDirectoryFiles(err, dirPath, files) {
     preview.clearQueue();
     clearImageCache();
 
-    for (i = 0; i < files.length; i++) {
-        file = files[i];
-
-        if (!exiftool.isFileRecognized(file)) {
-            continue;
-        }
+    for (i = 0; i < dirObject.files.length; i++) {
+        file = dirObject.files[i];
 
         previewElement = _document.createElement("div");
         previewElement.className = "preview";
@@ -198,10 +288,10 @@ function showDirectoryFiles(err, dirPath, files) {
         element = _document.createElement("div");
         element.className = "file-info";
         element.appendChild(previewElement);
-        element.appendChild(_document.createTextNode(files[i] + " "));
+        element.appendChild(_document.createTextNode(file.name + " "));
         content.appendChild(element);
 
-        createPreview(nodePath.resolve(dirPath, file), previewElement);
+        createPreview(file.path, previewElement);
     }
 }
 
