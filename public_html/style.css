@@ -172,6 +172,10 @@ body, button {
     -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
 }
 
+.rating {
+    display: inline-block;
+}
+
 .rating-zero, .rating-star {
     display: inline-block;
     margin: 0 2px 0 0;

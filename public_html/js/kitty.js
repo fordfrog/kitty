@@ -292,7 +292,7 @@ function onSelectDirectory(event) {
  */
 function loadDirectoryFiles(dirObject) {
     var content, i, file, element, previewElement, span, detailElement,
-            ratingElement, rating, j;
+            ratingElement, rating, j, ratingContainer;
 
     if (selectedDirectoryElement) {
         selectedDirectoryElement.classList.remove("selected");
@@ -330,6 +330,10 @@ function loadDirectoryFiles(dirObject) {
         rating = file.XMP && typeof file.XMP.Rating === "number"
                 ? file.XMP.Rating : null;
 
+        ratingContainer = _document.createElement("div");
+        ratingContainer.className = "rating";
+        element.appendChild(ratingContainer);
+
         for (j = 0; j <= 5; j++) {
             ratingElement = _document.createElement("span");
             ratingElement.appendChild(
@@ -340,7 +344,14 @@ function loadDirectoryFiles(dirObject) {
                 ratingElement.classList.add("selected");
             }
 
-            element.appendChild(ratingElement);
+            ratingElement.addEventListener("click",
+                    function(fileObject, rating, ratingContainer) {
+                        return function(event) {
+                            writeRating(fileObject, rating, ratingContainer);
+                        };
+                    }(file, j, ratingContainer), false);
+
+            ratingContainer.appendChild(ratingElement);
         }
 
         content.appendChild(element);
@@ -351,6 +362,55 @@ function loadDirectoryFiles(dirObject) {
 
         createPreview(file.path, previewElement);
     }
+}
+
+/**
+ * Writes XMP rating to the file.
+ *
+ * @param {Object} fileObject file object
+ * @param {Number} rating rating value
+ * @param {Element} ratingContainer rating container
+ */
+function writeRating(fileObject, rating, ratingContainer) {
+    exiftool.writeTag(fileObject.path, "xmp:rating", rating, function(error, stdout, stderr) {
+        exiftool.readFileMetaData(fileObject.path, function(error, stdout, stderr) {
+            fileObject.XMP = JSON.parse(stdout)[0].XMP;
+
+            updateRatingDisplay(fileObject, ratingContainer);
+        });
+    });
+}
+
+/**
+ * Updates display of rating value for specified file.
+ *
+ * @param {Object} fileObject file object
+ * @param {Element} ratingContainer rating container
+ */
+function updateRatingDisplay(fileObject, ratingContainer) {
+    var childNodes = ratingContainer.childNodes, j,
+            rating = fileObject.XMP.Rating;
+
+    if (rating === 0) {
+        childNodes[0].classList.add("selected");
+        childNodes[1].classList.remove("selected");
+        childNodes[2].classList.remove("selected");
+        childNodes[3].classList.remove("selected");
+        childNodes[4].classList.remove("selected");
+        childNodes[5].classList.remove("selected");
+    } else {
+        childNodes[0].classList.remove("selected");
+
+        for (j = 1; j <= 5; j++) {
+            if (rating >= j) {
+                childNodes[j].classList.add("selected");
+            } else {
+                childNodes[j].classList.remove("selected");
+            }
+        }
+    }
+
+    loadFileInfo(fileObject);
 }
 
 /**

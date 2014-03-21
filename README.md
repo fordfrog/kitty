@@ -43,8 +43,6 @@ In development.
 * enable editing/addition/removal of meta tags and their values on single files
 * enable editing/addition/removal of meta tags and their values on multiple
   files at once
-* enable easy rating of images (rating and image rejection) usable for
-  photography
 * add translations
 
 ## Running the application

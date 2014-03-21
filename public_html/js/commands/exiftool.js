@@ -95,3 +95,25 @@ exports.readDir = function(dir, handler) {
     nodeChildProcess.exec("exiftool -json -a -g0 .",
             {cwd: dir, maxBuffer: 1024 * 1024 * 100}, handler);
 };
+
+/**
+ * Writes specified tag to the file.
+ *
+ * @param {String} file file path
+ * @param {String} tag tag
+ * @param {Object} value value
+ * @param {Function} handler handler
+ */
+exports.writeTag = function(file, tag, value, handler) {
+    nodeChildProcess.exec("exiftool -" + tag + "='" + value + "' " + file, handler);
+};
+
+/**
+ * Reads metadata from single file.
+ *
+ * @param {String} file file path
+ * @param {Function} handler handler
+ */
+exports.readFileMetaData = function(file, handler) {
+    nodeChildProcess.exec("exiftool -json -a -g0 \"" + file + "\"", handler);
+};
