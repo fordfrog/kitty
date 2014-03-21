@@ -35,7 +35,6 @@ In development.
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts and metadata
-* when file is clicked, load and display file metadata
 * on preview double-click display enlarged preview
 * when in enlarged preview, enable moving forward/backward using buttons and
   keyboard

@@ -8,7 +8,8 @@ var nodeFs = require("fs"), nodePath = require("path"), nodeOS = require("os"),
         extensionHandlers = {}, _document, selectedDirectoryElement,
         appTmpDir = nodePath.resolve(nodeOS.tmpdir(), "kitty"),
         imgTmpDir = nodePath.resolve(appTmpDir, "images"),
-        previewMaxWidth = 300, previewMaxHeight = 300, rootPath, tree;
+        previewMaxWidth = 300, previewMaxHeight = 300, rootPath, tree,
+        selectedFileElement;
 
 if (!nodeFs.existsSync(appTmpDir)) {
     nodeFs.mkdirSync(appTmpDir);
@@ -59,7 +60,6 @@ function onTopDirDialogClose(event) {
 function readDirectoryTree() {
     tree = {
         path: rootPath,
-        pathWithoutRoot: "",
         name: nodePath.basename(rootPath),
         dirs: []
     };
@@ -85,7 +85,6 @@ function readSubDirectories(parent) {
         if (stats.isDirectory()) {
             subDirectory = {
                 path: fullPath,
-                pathWithoutRoot: nodePath.relative(rootPath, fullPath),
                 name: file,
                 dirs: []
             };
@@ -165,6 +164,27 @@ function readFilesHandler(dirObject, error, stdout, stderr, handler) {
 }
 
 /**
+ * Searches for directory object.
+ *
+ * @param {String} fullPath full directory path
+ *
+ * @returns {Object} directory object or null
+ */
+function findDirectory(fullPath) {
+    var curPath, pathParts, i;
+
+    pathParts = nodePath.relative(rootPath, fullPath).split(nodePath.sep);
+
+    curPath = tree;
+
+    for (i = 0; i < pathParts.length; i++) {
+        curPath = findDir(curPath.dirs, pathParts[i]);
+    }
+
+    return curPath;
+}
+
+/**
  * Searches for directory in the array of directory objects.
  *
  * @param {Array} dirsArray array of directory objects
@@ -178,6 +198,28 @@ function findDir(dirsArray, dirName) {
     for (i = 0; i < dirsArray.length; i++) {
         if (dirsArray[i].name === dirName) {
             return dirsArray[i];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Searches for file object by full path.
+ *
+ * @param {String} fullPath full file path
+ *
+ * @returns {Object} file object or null
+ */
+function findFile(fullPath) {
+    var dirObject = findDirectory(nodePath.dirname(fullPath)),
+            fileName = nodePath.basename(fullPath), i, file;
+
+    for (i = 0; i < dirObject.files.length; i++) {
+        file = dirObject.files[i];
+
+        if (file.name === fileName) {
+            return file;
         }
     }
 
@@ -228,7 +270,6 @@ function createDirectoryTreeElement(dirObject) {
     li.appendChild(span);
     span.appendChild(_document.createTextNode(text));
     span.setAttribute("data-path", dirObject.path);
-    span.setAttribute("data-path-without-root", dirObject.pathWithoutRoot);
     span.title = dirObject.path;
     span.addEventListener("click", onSelectDirectory, false);
 
@@ -241,18 +282,7 @@ function createDirectoryTreeElement(dirObject) {
  * @param {Event} event the selection event
  */
 function onSelectDirectory(event) {
-    var directoryElement = event.target,
-            pathWithoutRoot = directoryElement.getAttribute(
-                    "data-path-without-root"), i, pathParts, curPath;
-
-    pathParts = pathWithoutRoot.split(nodePath.sep);
-    curPath = tree;
-
-    for (i = 0; i < pathParts.length; i++) {
-        curPath = findDir(curPath.dirs, pathParts[i]);
-    }
-
-    loadDirectoryFiles(curPath);
+    loadDirectoryFiles(findDirectory(event.target.getAttribute("data-path")));
 }
 
 /**
@@ -261,14 +291,17 @@ function onSelectDirectory(event) {
  * @param {Object} dirObject directory object
  */
 function loadDirectoryFiles(dirObject) {
-    var content, i, file, element, previewElement, span;
+    var content, i, file, element, previewElement, span, detailElement;
 
     if (selectedDirectoryElement) {
-        selectedDirectoryElement.className = "";
+        selectedDirectoryElement.classList.remove("selected");
     }
 
     selectedDirectoryElement = dirObject.element.firstChild;
-    selectedDirectoryElement.className = "selected";
+    selectedDirectoryElement.classList.add("selected");
+
+    detailElement = _document.querySelector("#detail");
+    detailElement.innerHTML = "";
 
     content = _document.querySelector("#content");
     content.innerHTML = "";
@@ -287,12 +320,100 @@ function loadDirectoryFiles(dirObject) {
 
         element = _document.createElement("div");
         element.className = "file-info";
+        element.setAttribute("data-path", file.path);
         element.appendChild(previewElement);
         element.appendChild(_document.createTextNode(file.name + " "));
         content.appendChild(element);
 
+        element.addEventListener("click", onSelectFile, false);
+
+        file.element = element;
+
         createPreview(file.path, previewElement);
     }
+}
+
+/**
+ * Fired when file info is clicked.
+ *
+ * @param {Event} event event
+ */
+function onSelectFile(event) {
+    loadFileInfo(findFile(event.currentTarget.getAttribute("data-path")));
+}
+
+/**
+ * Loads file information.
+ *
+ * @param {Object} fileObject file object
+ */
+function loadFileInfo(fileObject) {
+    var detailElement = _document.querySelector("#detail");
+
+    if (selectedFileElement) {
+        selectedFileElement.classList.remove("selected");
+    }
+
+    selectedFileElement = fileObject.element;
+    selectedFileElement.classList.add("selected");
+
+    detailElement.innerHTML = "";
+
+    loadMetaData(fileObject);
+}
+
+/**
+ * Loads metadata into detail pane.
+ *
+ * @param {Object} fileObject file object
+ */
+function loadMetaData(fileObject) {
+    var detailElement = _document.querySelector("#detail"), propertyName,
+            element;
+
+    for (propertyName in fileObject) {
+        if (propertyName !== "element"
+                && fileObject.hasOwnProperty(propertyName)
+                && typeof fileObject[propertyName] === "object") {
+            element = _document.createElement("h1");
+            element.appendChild(_document.createTextNode(propertyName));
+            detailElement.appendChild(element);
+
+            appendMetaDataInfo(fileObject[propertyName]);
+        }
+    }
+}
+
+/**
+ * Appends metadata for single group to the detail pane.
+ *
+ * @param {Object} metadata metadata information
+ */
+function appendMetaDataInfo(metadata) {
+    var detailElement = _document.querySelector("#detail"),
+            table = _document.createElement("table"),
+            tbody = _document.createElement("tbody"), row, propertyName, cell;
+
+    table.appendChild(tbody);
+
+    for (propertyName in metadata) {
+        if (metadata.hasOwnProperty(propertyName)) {
+            row = _document.createElement("tr");
+            tbody.appendChild(row);
+
+            cell = _document.createElement("td");
+            cell.appendChild(_document.createTextNode(propertyName));
+            cell.title = propertyName;
+            row.appendChild(cell);
+
+            cell = _document.createElement("td");
+            cell.appendChild(_document.createTextNode(metadata[propertyName]));
+            cell.title = metadata[propertyName];
+            row.appendChild(cell);
+        }
+    }
+
+    detailElement.appendChild(table);
 }
 
 /**
