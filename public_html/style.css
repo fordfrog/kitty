@@ -192,3 +192,10 @@ body, button {
 .rating-star.selected, .rating-star:hover {
     color: #ffff00;
 }
+
+#detail-histograms img {
+    border: solid 1px #cccccc;
+    margin: 0 0 3px 0;
+    max-height: 100px;
+    width: 100%;
+}

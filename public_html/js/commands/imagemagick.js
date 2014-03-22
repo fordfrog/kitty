@@ -80,3 +80,54 @@ exports.createPreview = function(sourceFile, targetFile, maxWidth, maxHeight,
             + "\" -quality 75% -auto-orient -thumbnail '" + maxWidth + "x"
             + maxHeight + ">' \"" + targetFile + "\"", callback);
 };
+
+/**
+ * Generates histogram based on image value.
+ *
+ * @param {String} sourcePath source path
+ * @param {String} targetPath target path
+ * @param {Function} handler handler
+ */
+exports.createHistogramValue = function(sourcePath, targetPath, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
+    nodeChildProcess.exec("convert " + sourcePath + " -separate -append "
+            + "-define histogram:unique-colors=false histogram:" + targetPath,
+            handler);
+};
+
+/**
+ * Generates histogram based on image colors.
+ *
+ * @param {String} sourcePath source path
+ * @param {String} targetPath target path
+ * @param {Function} handler handler
+ */
+exports.createHistogramColor = function(sourcePath, targetPath, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
+    nodeChildProcess.exec("convert " + sourcePath
+            + " -define histogram:unique-colors=false histogram:" + targetPath,
+            handler);
+};
+
+/**
+ * Splits color histogram into RGB channels.
+ *
+ * @param {String} sourcePath source path
+ * @param {String} targetPath target path with '%d' at the place where channel
+ * numbers should be placed
+ * @param {Function} handler handler
+ */
+exports.splitColorHistogram = function(sourcePath, targetPath, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
+    nodeChildProcess.exec("convert " + sourcePath + " -separate " + targetPath,
+            handler);
+};

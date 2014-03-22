@@ -5,6 +5,7 @@
 var nodeFs = require("fs"), nodePath = require("path"), nodeOS = require("os"),
         exiftool = require("./commands/exiftool.js"),
         preview = require("./preview.js"), supportedExtensions = [],
+        imagemagick = require("./commands/imagemagick.js"),
         extensionHandlers = {}, _document, selectedDirectoryElement,
         appTmpDir = nodePath.resolve(nodeOS.tmpdir(), "kitty"),
         imgTmpDir = nodePath.resolve(appTmpDir, "images"),
@@ -428,7 +429,7 @@ function onSelectFile(event) {
  * @param {Object} fileObject file object
  */
 function loadFileInfo(fileObject) {
-    var detailElement = _document.querySelector("#detail");
+    var detailElement = _document.querySelector("#detail"), element;
 
     if (selectedFileElement) {
         selectedFileElement.classList.remove("selected");
@@ -439,7 +440,68 @@ function loadFileInfo(fileObject) {
 
     detailElement.innerHTML = "";
 
+    element = _document.createElement("div");
+    element.id = "detail-histograms";
+    detailElement.appendChild(element);
+
+    element = _document.createElement("div");
+    element.id = "detail-metadata";
+    detailElement.appendChild(element);
+
+    loadHistograms(fileObject);
     loadMetaData(fileObject);
+}
+
+/**
+ * Loads image histograms.
+ *
+ * @param {Object} fileObject file object
+ */
+function loadHistograms(fileObject) {
+    var fileHistogramValue = nodePath.resolve(imgTmpDir, "histogram_value.png"),
+            fileHistogramColor = nodePath.resolve(imgTmpDir, "histogram_color.png"),
+            fileHistogramSplit = nodePath.resolve(imgTmpDir, "histogram_%d.png"),
+            detailHistograms = _document.querySelector("#detail-histograms"),
+            img, i;
+
+    detailHistograms.innerHTML = "";
+
+    for (i = 0; i < 5; i++) {
+        img = _document.createElement("img");
+        img.style.display = "none";
+        detailHistograms.appendChild(img);
+    }
+
+    imagemagick.createHistogramValue(fileObject.path, fileHistogramValue,
+            function(error, stdout, stderr) {
+                showHistogram(detailHistograms.childNodes[0], fileHistogramValue);
+            });
+    imagemagick.createHistogramColor(fileObject.path, fileHistogramColor,
+            function(error, stdout, stderr) {
+                showHistogram(detailHistograms.childNodes[1], fileHistogramColor);
+
+                imagemagick.splitColorHistogram(fileHistogramColor,
+                        fileHistogramSplit,
+                        function(error, stdout, stderr) {
+                            showHistogram(detailHistograms.childNodes[2],
+                                    fileHistogramSplit.replace("%d", "0"));
+                            showHistogram(detailHistograms.childNodes[3],
+                                    fileHistogramSplit.replace("%d", "1"));
+                            showHistogram(detailHistograms.childNodes[4],
+                                    fileHistogramSplit.replace("%d", "2"));
+                        });
+            });
+}
+
+/**
+ * Shows histogram.
+ *
+ * @param {Element} element img element
+ * @param {String} file file path
+ */
+function showHistogram(element, file) {
+    element.src = file;
+    element.style.display = "block";
 }
 
 /**
@@ -448,8 +510,10 @@ function loadFileInfo(fileObject) {
  * @param {Object} fileObject file object
  */
 function loadMetaData(fileObject) {
-    var detailElement = _document.querySelector("#detail"), propertyName,
-            element;
+    var detailMetaData = _document.querySelector("#detail-metadata"),
+            propertyName, element;
+
+    detailMetaData.innerHTML = "";
 
     for (propertyName in fileObject) {
         if (propertyName !== "element"
@@ -457,7 +521,7 @@ function loadMetaData(fileObject) {
                 && typeof fileObject[propertyName] === "object") {
             element = _document.createElement("h1");
             element.appendChild(_document.createTextNode(propertyName));
-            detailElement.appendChild(element);
+            detailMetaData.appendChild(element);
 
             appendMetaDataInfo(fileObject[propertyName]);
         }
@@ -470,7 +534,7 @@ function loadMetaData(fileObject) {
  * @param {Object} metadata metadata information
  */
 function appendMetaDataInfo(metadata) {
-    var detailElement = _document.querySelector("#detail"),
+    var detailMetaData = _document.querySelector("#detail-metadata"),
             table = _document.createElement("table"),
             tbody = _document.createElement("tbody"), row, propertyName, cell;
 
@@ -493,7 +557,7 @@ function appendMetaDataInfo(metadata) {
         }
     }
 
-    detailElement.appendChild(table);
+    detailMetaData.appendChild(table);
 }
 
 /**
