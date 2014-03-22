@@ -92,6 +92,10 @@ exports.isFileRecognized = function(file) {
  * @param {Function} handler handler to be called after the directory is read
  */
 exports.readDir = function(dir, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
     nodeChildProcess.exec("exiftool -json -a -g0 .",
             {cwd: dir, maxBuffer: 1024 * 1024 * 100}, handler);
 };
@@ -105,6 +109,10 @@ exports.readDir = function(dir, handler) {
  * @param {Function} handler handler
  */
 exports.writeTag = function(file, tag, value, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
     nodeChildProcess.exec("exiftool -" + tag + "='" + value + "' " + file, handler);
 };
 
@@ -115,5 +123,9 @@ exports.writeTag = function(file, tag, value, handler) {
  * @param {Function} handler handler
  */
 exports.readFileMetaData = function(file, handler) {
+    if (!isAvailable) {
+        return;
+    }
+
     nodeChildProcess.exec("exiftool -json -a -g0 \"" + file + "\"", handler);
 };
