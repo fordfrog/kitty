@@ -35,7 +35,7 @@ In development.
 * watch directories for additions/removals of sub-directories and update the
   tree
 * watch directories for file additions/removals and update counts and metadata
-* on preview double-click display enlarged preview
+* on preview double-click display enlarged preview (including zoom)
 * when in enlarged preview, enable moving forward/backward using buttons and
   keyboard
 * enable filtering by meta tag values, strings and media types
