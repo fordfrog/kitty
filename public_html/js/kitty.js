@@ -348,6 +348,7 @@ function loadDirectoryFiles(dirObject) {
             ratingElement.addEventListener("click",
                     function(fileObject, rating, ratingContainer) {
                         return function(event) {
+                            event.stopPropagation();
                             writeRating(fileObject, rating, ratingContainer);
                         };
                     }(file, j, ratingContainer), false);
@@ -411,7 +412,7 @@ function updateRatingDisplay(fileObject, ratingContainer) {
         }
     }
 
-    loadFileInfo(fileObject);
+    loadMetaData(fileObject);
 }
 
 /**
@@ -464,6 +465,10 @@ function loadHistograms(fileObject) {
             detailHistograms = _document.querySelector("#detail-histograms"),
             img, i;
 
+    if (!detailHistograms) {
+        return;
+    }
+
     detailHistograms.innerHTML = "";
 
     for (i = 0; i < 5; i++) {
@@ -512,6 +517,10 @@ function showHistogram(element, file) {
 function loadMetaData(fileObject) {
     var detailMetaData = _document.querySelector("#detail-metadata"),
             propertyName, element;
+
+    if (!detailMetaData) {
+        return;
+    }
 
     detailMetaData.innerHTML = "";
 
