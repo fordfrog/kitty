@@ -113,7 +113,8 @@ exports.writeTag = function(file, tag, value, handler) {
         return;
     }
 
-    nodeChildProcess.exec("exiftool -" + tag + "='" + value + "' " + file, handler);
+    nodeChildProcess.exec("exiftool -overwrite_original -" + tag + "='" + value
+            + "' \"" + file + "\"", handler);
 };
 
 /**
